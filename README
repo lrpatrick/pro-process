@@ -1,0 +1,13 @@
+README file for pro-process
+
+This is the part of the PROMETEO database. These routines are used to introduce a new set of data into the database. 
+
+These routines generate the PROMETEO normalised FITS and ASCII files that are required input for the database
+
+So far these routines can process files from:
+
+1. ESO (HARPS)
+2. IACOB database
+3. AAOmega - after much pre-processing
+4. ING 
+
