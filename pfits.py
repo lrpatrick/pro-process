@@ -107,15 +107,12 @@ def write_fits_header(newfits, pid, keywords):
     return newfits
 
 
-def write_fits(oldfits, pid, data, keywords):
+def write_fits(pid, data, keywords, oldfits=None):
 
     """
     Function to write the standard PROMETEO FITS files
 
     Arguments:
-    
-    oldfits : astropy.io.fits.hdu.hdulist.HDUList
-        The input fits file
 
     pid : int
         ASTRO+ ID for star
@@ -143,25 +140,34 @@ def write_fits(oldfits, pid, data, keywords):
             Instrument used           [free text]
         EXPTIME   : float
             Exposure time             [Seconds]
+    
+    oldfits : astropy.io.fits.hdu.hdulist.HDUList
+        A fits file to be used to propagate header information
 
     Returns:
     prohdu : astropy.io.fits.hdu.hdulist.HDUList
         New FITS file
     """
-
+    # Create clean FITS based on the data alone
     new_hdu = fits.PrimaryHDU(data)
-
+    # Add header information to new fits
     new_hdu = write_fits_header(new_hdu, pid, keywords)
-
+    # Get the filename to be written out
     fname = write_filename('.fits', keywords[0], keywords[1],
                                     keywords[4], keywords[5],
                                     int(round(data[:, 0][0])),
                                     int(round(data[:, 0][-1])))
+    # Add additional information from FITS if appropriate
+    if oldfits is not None:
+        image_hdu = fits.ImageHDU(None, header=oldfits[0].header)
+    else:
+        # This is not a good solution!
+        image_hdu = fits.ImageHDU(None)
 
-    image_hdu = fits.ImageHDU(None, header=oldfits[0].header)
-
+    # Combine extensions into one file
     prohdu = fits.HDUList([new_hdu, image_hdu])
 
+    # Write output FITS file
     prohdu.writeto('data/' + fname, output_verify='ignore')
     print('[INFO] FITS file written to {0}'.format(fname))
     return prohdu
@@ -279,174 +285,177 @@ def get_header_data_aao(fib, path_final_vel, path_id_cat, comb_fits):
     # obj_res = 'XXX'
     obj_rv = final_vel['VHEL'][vel_idx].strip(' ')
     texp = comb_fits[2].header['TWKODUR']
+    print('{}.dat  {}   {}    {}    {}    {}    {}    {}'\
+        .format(fib, obj_name_str, date_obs,
+                obj_ra, obj_dec, obj_tel, obj_ins, texp))
 
     return date, obj_name_str, date_obs, obj_ra, obj_dec, obj_tel, obj_ins, obj_rv, texp
 
 
-def write_ascii_header_aao(fib, pid, final_vel, id_cat, comb_fits):
-    """
-    Write ASCII standard header format
+# def write_ascii_header_aao(fib, pid, final_vel, id_cat, comb_fits):
+#     """
+#     Write ASCII standard header format
 
-    """ 
-    # Generate header data
-    date, obj_name_str, date_obs, \
-          obj_ra, obj_dec, \
-          obj_tel, obj_ins, \
-          obj_rv, \
-          texp = get_header_data_aao(fib, final_vel, id_cat, comb_fits)
+#     """ 
+#     # Generate header data
+#     date, obj_name_str, date_obs, \
+#           obj_ra, obj_dec, \
+#           obj_tel, obj_ins, \
+#           obj_rv, \
+#           texp = get_header_data_aao(fib, final_vel, id_cat, comb_fits)
 
-    hascii = 'PROMETEO processed ASCII file\nProcessing date: ' + str(date) \
-        + '\nPROMETEO reference ID: ' + str(pid) \
-        + '\nOBJECT: ' + str(obj_name_str) \
-        + '\nDATE-OBS: ' + str(date_obs) \
-        + '\nRA: ' + str(obj_ra) \
-        + '\nDEC: ' + str(obj_dec) \
-        + '\nTELESCOPE: ' + str(obj_tel) \
-        + '\nINSTRUMENT: ' + str(obj_ins) \
-        + '\nEXPOSURE TIME: ' + str(texp) \
-        + '\nHELIOCENTRIC RADIAL VELOCITY: ' + str(obj_rv) \
-        + '\nCOL1: WAVELENGH ARRAY [Angstrom]' \
-        + '\nCOL2: NORMALISED FLUX ARRAY [arbitary units]' \
-        + '\nCOL3: ERROR SPECTRUM [arbitary units]' \
-        + '\n'
+#     hascii = 'PROMETEO processed ASCII file\nProcessing date: ' + str(date) \
+#         + '\nPROMETEO reference ID: ' + str(pid) \
+#         + '\nOBJECT: ' + str(obj_name_str) \
+#         + '\nDATE-OBS: ' + str(date_obs) \
+#         + '\nRA: ' + str(obj_ra) \
+#         + '\nDEC: ' + str(obj_dec) \
+#         + '\nTELESCOPE: ' + str(obj_tel) \
+#         + '\nINSTRUMENT: ' + str(obj_ins) \
+#         + '\nEXPOSURE TIME: ' + str(texp) \
+#         + '\nHELIOCENTRIC RADIAL VELOCITY: ' + str(obj_rv) \
+#         + '\nCOL1: WAVELENGH ARRAY [Angstrom]' \
+#         + '\nCOL2: NORMALISED FLUX ARRAY [arbitary units]' \
+#         + '\nCOL3: ERROR SPECTRUM [arbitary units]' \
+#         + '\n'
 
-    return hascii, obj_name_str
+#     return hascii, obj_name_str
 
 
-def write_fits_header_aao(newfits, pid, fib, final_vel, id_cat, comb_fits):
-    """
-    Create a fits header and instert it into the new fits fits
+# def write_fits_header_aao(newfits, pid, fib, final_vel, id_cat, comb_fits):
+#     """
+#     Create a fits header and instert it into the new fits fits
     
-    pid should be an integer
+#     pid should be an integer
 
-    """
-    # Generate header data
-    date, obj_name_str, date_obs, \
-          obj_ra, obj_dec, \
-          obj_tel, obj_ins, \
-          obj_rv,\
-          texp = get_header_data_aao(fib, final_vel, id_cat, comb_fits)
+#     """
+#     # Generate header data
+#     date, obj_name_str, date_obs, \
+#           obj_ra, obj_dec, \
+#           obj_tel, obj_ins, \
+#           obj_rv,\
+#           texp = get_header_data_aao(fib, final_vel, id_cat, comb_fits)
 
-    # Put data into header
-    newfits.header['DATE'] = date
-    newfits.header['PROID'] = pid
-    newfits.header['OBJECT'] = obj_name_str
-    newfits.header['DATE-OBS'] = date_obs
-    # newfits.header['CRVAL1'] = crval1
-    # newfits.header['CDELT1'] = cdelt1
+#     # Put data into header
+#     newfits.header['DATE'] = date
+#     newfits.header['PROID'] = pid
+#     newfits.header['OBJECT'] = obj_name_str
+#     newfits.header['DATE-OBS'] = date_obs
+#     # newfits.header['CRVAL1'] = crval1
+#     # newfits.header['CDELT1'] = cdelt1
 
-    newfits.header['RA'] = obj_ra
-    newfits.header['DEC'] = obj_dec
-    newfits.header['TEL'] = obj_tel
-    newfits.header['INS'] = obj_ins
-    # newfits.header['RES'] = obj_res
-    newfits.header['VBAR'] = obj_rv
-    newfits.header['TEXP'] = texp
+#     newfits.header['RA'] = obj_ra
+#     newfits.header['DEC'] = obj_dec
+#     newfits.header['TEL'] = obj_tel
+#     newfits.header['INS'] = obj_ins
+#     # newfits.header['RES'] = obj_res
+#     newfits.header['VBAR'] = obj_rv
+#     newfits.header['TEXP'] = texp
 
-    return newfits
-
-
-def get_header_data_harps(harps):
-    """
-
-    Return the necessary header data for AAO observations to be used in both
-    ASCII and FITS files
-
-    harps : astropy.fits.
-
-    """
-    date = str(datetime.date.today())
-    # pid = str()
-    obj_name_str =  harps[0].header['OBJECT']
-    date_obs = harps[0].header['DATE-OBS']
-    obj_ra = harps[0].header['RA']
-    obj_dec = harps[0].header['DEC']
-    obj_tel = harps[0].header['TELESCOP']
-    obj_ins = harps[0].header['INSTRUME']
-    texp = harps[0].header['EXPTIME']
+#     return newfits
 
 
-    return date, obj_name_str, date_obs, obj_ra, obj_dec, obj_tel, obj_ins, texp
+# def get_header_data_harps(harps):
+#     """
+
+#     Return the necessary header data for AAO observations to be used in both
+#     ASCII and FITS files
+
+#     harps : astropy.fits.
+
+#     """
+#     date = str(datetime.date.today())
+#     # pid = str()
+#     obj_name_str =  harps[0].header['OBJECT']
+#     date_obs = harps[0].header['DATE-OBS']
+#     obj_ra = harps[0].header['RA']
+#     obj_dec = harps[0].header['DEC']
+#     obj_tel = harps[0].header['TELESCOP']
+#     obj_ins = harps[0].header['INSTRUME']
+#     texp = harps[0].header['EXPTIME']
 
 
-def write_fits_header_harps(oldfits, newfits, pid):
-    """
-    Create a fits header and instert it into the new fits fits
+#     return date, obj_name_str, date_obs, obj_ra, obj_dec, obj_tel, obj_ins, texp
+
+
+# def write_fits_header_harps(oldfits, newfits, pid):
+#     """
+#     Create a fits header and instert it into the new fits fits
     
-    pid should be an integer
+#     pid should be an integer
 
-    """
-    # Generate header data
-    date, obj_name_str, date_obs, \
-          obj_ra, obj_dec, \
-          obj_tel, obj_ins, \
-          texp = get_header_data_harps(oldfits)
+#     """
+#     # Generate header data
+#     date, obj_name_str, date_obs, \
+#           obj_ra, obj_dec, \
+#           obj_tel, obj_ins, \
+#           texp = get_header_data_harps(oldfits)
 
-    # Put data into header
-    newfits.header['DATE'] = date
-    newfits.header['PROID'] = pid
-    newfits.header['OBJECT'] = obj_name_str
-    newfits.header['DATE-OBS'] = date_obs
-    newfits.header['RA'] = obj_ra
-    newfits.header['DEC'] = obj_dec
-    newfits.header['TEL'] = obj_tel
-    newfits.header['INS'] = obj_ins
-    newfits.header['TEXP'] = texp
+#     # Put data into header
+#     newfits.header['DATE'] = date
+#     newfits.header['PROID'] = pid
+#     newfits.header['OBJECT'] = obj_name_str
+#     newfits.header['DATE-OBS'] = date_obs
+#     newfits.header['RA'] = obj_ra
+#     newfits.header['DEC'] = obj_dec
+#     newfits.header['TEL'] = obj_tel
+#     newfits.header['INS'] = obj_ins
+#     newfits.header['TEXP'] = texp
 
-    return newfits
-
-
-def write_ascii_header_harps(fhdu, pid):
-    """
-    Write ASCII standard header format
-
-    """ 
-    # Generate header data
-    date, obj_name_str, date_obs, \
-          obj_ra, obj_dec, \
-          obj_tel, obj_ins, \
-          texp = get_header_data_harps(fhdu)
+#     return newfits
 
 
-    hascii = 'PROMETEO processed ASCII file\nProcessing date: ' + str(date) \
-        + '\nPROMETEO reference ID: ' + str(pid) \
-        + '\nOBJECT: ' + str(obj_name_str) \
-        + '\nDATE-OBS: ' + str(date_obs) \
-        + '\nRA: ' + str(obj_ra) \
-        + '\nDEC: ' + str(obj_dec) \
-        + '\nTELESCOPE: ' + str(obj_tel) \
-        + '\nINSTRUMENT: ' + str(obj_ins) \
-        + '\nEXPOSURE TIME: ' + str(texp) \
-        + '\nCOL1: WAVELENGH ARRAY [Angstrom]' \
-        + '\nCOL2: NORMALISED FLUX ARRAY [arbitary units]' \
-        + '\nCOL3: ERROR SPECTRUM [arbitary units]' \
-        + '\n'
+# def write_ascii_header_harps(fhdu, pid):
+#     """
+#     Write ASCII standard header format
 
-    return hascii, obj_name_str
+#     """ 
+#     # Generate header data
+#     date, obj_name_str, date_obs, \
+#           obj_ra, obj_dec, \
+#           obj_tel, obj_ins, \
+#           texp = get_header_data_harps(fhdu)
 
 
-def write_fits_harps(oldfits, data, pid):
-    """
-    Function to write the standard PROMETEO FITS files
+#     hascii = 'PROMETEO processed ASCII file\nProcessing date: ' + str(date) \
+#         + '\nPROMETEO reference ID: ' + str(pid) \
+#         + '\nOBJECT: ' + str(obj_name_str) \
+#         + '\nDATE-OBS: ' + str(date_obs) \
+#         + '\nRA: ' + str(obj_ra) \
+#         + '\nDEC: ' + str(obj_dec) \
+#         + '\nTELESCOPE: ' + str(obj_tel) \
+#         + '\nINSTRUMENT: ' + str(obj_ins) \
+#         + '\nEXPOSURE TIME: ' + str(texp) \
+#         + '\nCOL1: WAVELENGH ARRAY [Angstrom]' \
+#         + '\nCOL2: NORMALISED FLUX ARRAY [arbitary units]' \
+#         + '\nCOL3: ERROR SPECTRUM [arbitary units]' \
+#         + '\n'
+
+#     return hascii, obj_name_str
+
+
+# def write_fits_harps(oldfits, data, pid):
+#     """
+#     Function to write the standard PROMETEO FITS files
     
-    This function current assumes that the data is the the zeroth extension
+#     This function current assumes that the data is the the zeroth extension
 
-    """
-    new_hdu = fits.PrimaryHDU(data)
+#     """
+#     new_hdu = fits.PrimaryHDU(data)
 
-    new_hdu = write_fits_header_harps(oldfits, new_hdu, pid)
+#     new_hdu = write_fits_header_harps(oldfits, new_hdu, pid)
 
-    image_hdu = fits.ImageHDU(None, header=oldfits[0].header)
+#     image_hdu = fits.ImageHDU(None, header=oldfits[0].header)
 
-    thdu = fits.HDUList([new_hdu, image_hdu])
+#     thdu = fits.HDUList([new_hdu, image_hdu])
 
-    fname = write_filename('.fits', new_hdu.header['OBJECT'],
-                                 new_hdu.header['DATE-OBS'],
-                                 new_hdu.header['TEL'],
-                                 new_hdu.header['INS'],
-                                 int(round(new_hdu.data[:, 0][0])),
-                                 int(round(new_hdu.data[:, 0][-1])))
+#     fname = write_filename('.fits', new_hdu.header['OBJECT'],
+#                                  new_hdu.header['DATE-OBS'],
+#                                  new_hdu.header['TEL'],
+#                                  new_hdu.header['INS'],
+#                                  int(round(new_hdu.data[:, 0][0])),
+#                                  int(round(new_hdu.data[:, 0][-1])))
 
-    thdu.writeto('data/' + fname, output_verify='ignore')
-    print('[INFO] FITS file written to {0}'.format(fname))
-    return thdu
+#     thdu.writeto('data/' + fname, output_verify='ignore')
+#     print('[INFO] FITS file written to {0}'.format(fname))
+#     return thdu

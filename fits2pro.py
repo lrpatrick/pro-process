@@ -19,39 +19,55 @@ import os
 
 import pfits
 
-def getdata(option, fits):
+
+def getdata(x_option, y_option, yerr_option, fits):
     """
     A function to get and format data depending on the type of input
 
-    More options should be added as they are encountered
-    """
-    if option == 0:
-        x = fits[1].data.field('WAVE')[0]
-        y = fits[1].data.field('FLUX')[0]
-        yerr = np.zeros_like(x)
-    elif option == 1:
-        x = pfits.lam_axis(fits[0].header['CRVAL1'],
-                   fits[0].header['CDELT1'],
-                   fits[0].data[0].shape[0])
-        y = fits[0].data[0]
-        yerr = fits[0].data[1]
+    More flexibility should be added.
 
+
+    """
+    # Flux
+    if y_option == 0:
+        y = fits[y_ext].data.field(yname)[0]
+    elif y_option == 1:
+        y = fits[y_ext].data[0] 
+
+    # Wavelength
+    if x_option == 0:
+        x = fits[x_ext].data.field(xname)[0]
+    elif x_option == 1:
+        x = pfits.lam_axis(fits[crval1_ext].header[crval1],
+                   fits[cdelt1_ext].header[cdelt1],
+                   y.shape[0])
+    # Flux error
+    if yerr_option == 0:
+        yerr = np.zeros_like(x)
+    elif yerr_option == 1:
+        yerr = np.zeros_like(x)
+        # yerr = fits[yerr_ext].data.field(yerrname)[0]
+    elif yerr_option == 2:
+        yerr = np.zeros_like(x)
+        # yerr = fits[y_ext].data[0] 
+
+    # Stack data in useful format:
     data = np.column_stack((x, y, yerr))
     return data
 
 # HARPS
-# flist = glob.glob('/home/lee/Work/ngc330/NGC330_HARPS/*.fits')
+flist = glob.glob('/home/lee/Work/ngc330/NGC330_HARPS/*.fits')
 # IACOB
-flist = glob.glob('/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/IACOB/raw/*.fits')
-
+# flist = glob.glob('/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/IACOB/raw/*.fits')
+# Cygnus
+# flist = glob.glob('/home/lee/Work/PROMETEO/cygOB2_spectra/spectra_CYGOB2_Sara/INT/spn_ag16/*.fits')
 pid_start = int(input('[INFO] Please enter ID number for first spectrum as integer:\n')) or int(0)
 
 # User input KEYWORDS for all spectra:
 
-# This information will be first guessed, then the user will have the final
-# say on what actually get processed 
+# TODO: Guess ...
 
-# These willbe the default values
+# The HARPS keywords will be the default values
 # Input keywords 
 # HARPS
 in_kws = ['OBJECT', 'DATE-OBS', 'RA', 'DEC',
@@ -60,17 +76,53 @@ in_kws = ['OBJECT', 'DATE-OBS', 'RA', 'DEC',
 in_exts = np.zeros(len(in_kws), dtype=int)
 
 # IACOB
-in_kws = ['OBJECT', 'DATE-OBS', 'I-RA', 'I-DEC',
-          'TELESCOP', 'INSTRUME', 'I-TEXP']
+# in_kws = ['OBJECT', 'DATE-OBS', 'I-RA', 'I-DEC',
+#           'TELESCOP', 'INSTRUME', 'I-TEXP']
+
+# Cygnus
+# in_kws = ['OBJECT', 'DATE-OBS', 'RA', 'DEC',
+#           'TELESCOP', 'INSTRUME', 'TEXP']
 
 # Input extensions
 in_exts = np.zeros(len(in_kws), dtype=int)
 
 # Input data
-print('[INFO] How is the input data stored?')
-print('[INFO] Options:\n 0 : wavelength and spectrum as separate arrays in 1st extension\n')
-print('[INFO] 1 : Spectrum in 0th extension, wavelength from header keywords (CRVAL1, CDELT1)\n')
-data_store = int(input('[INPUT] Please select an option')) or 0
+print('[INFO] Data structure definition:')
+print('[INFO] Wavelength:')
+x_option = int(input('[INPUT] Options:\n 0 : Array Name\n 1 : Keywords\n')) or 0
+if x_option == 0:
+    xname = input('Array name:\n')
+    x_ext = int(input('Header extension:\n'))
+elif x_option == 1:
+    crval1 = input('Reference Position header keyword:\n')
+    crval1_ext = int(input('Reference Position header keyword extension:\n'))
+    cdelt1 = input('Pixel scale keyword:\n')
+    cdelt1_ext = int(input('Pixel scale keyword extension:\n'))
+else:
+    print('[WARNING] INPUT not understood')
+
+print('[INFO] Flux:')
+y_option = int(input('[INPUT] Options:\n 0 : Array Name\n 1 : Extension\n')) or 0
+if y_option == 0:
+    yname = input('Array name:\n')
+    y_ext = int(input('Header extension:\n'))
+elif y_option == 1:
+    y_ext = int(input('Header extension:\n'))
+else:
+    print('[WARNING] INPUT not understood')
+
+print('[INFO] Flux Error:')
+yerr_option = int(input('[INPUT] Options:\n 0 : Zeros\n 1 : Array Name\n 2: Extension\n')) or 0
+if yerr_option == 0:
+    pass
+elif yerr_option == 1:
+    yname = input('Array name:\n')
+    y_ext = int(input('Header extension:\n'))
+elif yerr_option == 2:
+    y_ext = int(input('Header extension:\n'))
+else:
+    print('[WARNING] INPUT not understood')
+
 
 for i, ffits in enumerate(flist[:20]):
     print('[INFO] Processing file {}'.format(ffits))
@@ -79,7 +131,7 @@ for i, ffits in enumerate(flist[:20]):
     try:
         infits = fits.open(ffits)
         # Get Data:
-        data = getdata(data_store, infits)
+        data = getdata(x_option, y_option, yerr_option, infits)
         # Get header information from in_kws
         keyword_values = [infits[ext].header[kw]
                           for ext, kw in zip(in_exts, in_kws)]
@@ -88,7 +140,7 @@ for i, ffits in enumerate(flist[:20]):
         print('[WARNING] Unable to generate appropriate data')
 
     try:
-        new_hdu = pfits.write_fits(infits, pid_i, data, keyword_values)
+        new_hdu = pfits.write_fits(pid_i, data, keyword_values, infits)
     except:
         print('[WARNING] Unable to write new FITS file')
     try:
