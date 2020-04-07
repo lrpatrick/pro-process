@@ -119,21 +119,21 @@ data_options, data_keywords,\
 # The HARPS keywords will be the default values
 # Input keywords 
 # HARPS
-in_kws = ['OBJECT', 'DATE-OBS', 'RA', 'DEC',
-          'TELESCOP', 'INSTRUME', 'EXPTIME']
-# Input extensions
-in_exts = np.zeros(len(in_kws), dtype=int)
-
-# IACOB
-# in_kws = ['OBJECT', 'DATE-OBS', 'I-RA', 'I-DEC',
-#           'TELESCOP', 'INSTRUME', 'I-TEXP']
-
-# Cygnus
 # in_kws = ['OBJECT', 'DATE-OBS', 'RA', 'DEC',
-#           'TELESCOP', 'INSTRUME', 'TEXP']
+#           'TELESCOP', 'INSTRUME', 'EXPTIME']
+# # Input extensions
+# in_exts = np.zeros(len(in_kws), dtype=int)
 
-# Input extensions
-in_exts = np.zeros(len(in_kws), dtype=int)
+# # IACOB
+# # in_kws = ['OBJECT', 'DATE-OBS', 'I-RA', 'I-DEC',
+# #           'TELESCOP', 'INSTRUME', 'I-TEXP']
+
+# # Cygnus
+# # in_kws = ['OBJECT', 'DATE-OBS', 'RA', 'DEC',
+# #           'TELESCOP', 'INSTRUME', 'TEXP']
+
+# # Input extensions
+# in_exts = np.zeros(len(in_kws), dtype=int)
 
 # Input data
 print('[INFO] Data structure definition:')
@@ -194,7 +194,18 @@ else:
     else:
         print('[WARNING] INPUT not understood')
 
-a = input('[INFO] This is a chance to stop before entering the unbreakable loop!')
+# Check Header structure
+print('[INFO] Current header values:')
+
+for i, kw in enumerate(header_kws):
+    print('KW: "{}" EXT {}'.format(kw, header_exts[i]))
+    update = input('[INPUT] Update the above choice? [y/N]\n') or 'n'
+    if update.lower() == 'y':
+        header_kws[i] = input('[INPUT] New Keyword (str):\n')
+        header_exts[i] = input('[INPUT] New Extension (int):\n')
+
+
+# a = input('[INFO] This is a chance to stop before entering the unbreakable loop!')
 
 
 for i, ffits in enumerate(flist):
@@ -207,7 +218,7 @@ for i, ffits in enumerate(flist):
         data = getdata(data_options, data_keywords, infits)
         # Get header information from in_kws
         keyword_values = [infits[ext].header[kw]
-                          for ext, kw in zip(in_exts, in_kws)]
+                          for ext, kw in zip(header_exts, header_kws)]
 
     except:
         print('[WARNING] Unable to generate appropriate data')
