@@ -43,6 +43,202 @@ def lam_axis(lmin, step, size):
     return lam
 
 
+def interface_defaults():
+    """
+    Return deafult options for all input values
+
+    Returns:
+    data_options : list
+        A list of options to describe the input data. This consists of three
+        integers corresponding to: x_option, y_option, yerr_option
+
+    data_keywords : list
+        A list of header keywords and names corresponding to the data choices.
+
+    header_kws : list
+        A list of header keywords that will be used to get header information.
+        This list contains six strings with the default keywords.
+
+    header_exts : list
+        A list of header extensions. The default is that these are all zero.
+
+    """
+    # Data: 
+    # Wavelength
+    x_option = 0
+    xname ='WAVE'
+    x_ext = 0
+    # Flux
+    y_option = 0
+    yname ='FLUX'
+    y_ext = 0
+    # Flux Error
+    yerr_option = 0
+    # 
+    data_options = [x_option, y_option, yerr_option]
+    data_keywords = [xname, x_ext, None, None, yname, y_ext]
+
+    # Header:
+    header_kws = ['OBJECT', 'DATE-OBS', 'RA', 'DEC',
+                  'TELESCOP', 'INSTRUME', 'EXPTIME']
+    header_exts = np.zeros(len(header_kws), dtype=int)
+    return data_options, data_keywords, header_kws, header_exts
+
+
+
+def get_data_structure(infits):
+    """
+    Function to guess the structure of the input data from a given fits file
+
+    This function returns all of the data options requested along with their
+    associated keywords. How will this work when they have different keywords?
+
+    Arguments: 
+    infits : astropy.io.fits.hdu.hdulist.HDUList
+        One FITS file that represents of all of the files in the archive
+    
+
+    Returns:
+    data_options : list
+        A list of options to describe the input data. This consists of three
+        integers corresponding to: x_option, y_option, yerr_option
+
+    data_keywords : list
+        A list of header keywords and names corresponding to the data choices.
+        Note that the length and content of this list changes depending on the
+        choices
+
+    """
+    data_options, data_keywords, \
+        header_kws, header_exts = interface_defaults()
+
+    hdr_keys0 = list(infits[0].header.keys())
+    exts = len(infits)
+
+    # Wavelength:
+    # CRVAL is always present if x_option == 1 is to be generated:
+    crval_matches = [key for key in hdr_keys0 if 'CRVAL' in key]
+    if len(crval_matches) == 1:
+        print('[INFO] CRVAL keyword present')
+        data_options[0] = 1
+        data_keywords[0] = crval_matches[0]
+        # Extension
+        data_keywords[1] = 0
+        cdelt_matches = [key for key in hdr_keys0 if key.startswith('CD')]
+        if len(cdelt_matches) == 1:
+            print('[INFO] CDELT keyword present')
+            data_keywords[2] = cdelt_matches[0]
+            # Extension
+            data_keywords[3] = 0
+        elif len(cdelt_matches) > 1:
+            print('[INFO] Multiple CDELT keywords present')
+            print('[INFO] Searching for exact matches')
+            cdelt_exact = [key for key in cdelt_matches if 'CDELT1' in key]
+            if len(cdelt_exact) == 1:
+                data_keywords[2] = cdelt_exact[0]
+                # Extension
+                data_keywords[3] = 0
+            else:
+                # Try CD1_1
+                cdelt_exact = [key for key in cdelt_matches if 'CD1_1' in key]
+                data_keywords[2] = cdelt_exact[0]
+                # Extension
+                data_keywords[3] = 0
+    elif len(crval_matches) == 0:
+        print('[INFO] No CRVAL keyword present')
+        data_options[0] = 0
+    else:
+        print('[INFO] Ambigious CRVAL keyword, returning default')
+
+    # If no wavelength keywords in primary header and NAXIS is zero
+    # There is nothing more of interest in this header
+    naxis = infits[0].header['NAXIS']
+    if naxis == 0:
+        print('[INFO] Info from primary header exhausted. Trying others:')
+        for ext in range(1, exts):
+            hdr_keys = list(infits[ext].header.keys())
+            # Directly search for header names
+            array_names = [infits[ext].header[key] for key in hdr_keys if "TTYPE" in key]
+            if array_names[0] == 'WAVE' and array_names[1] == 'FLUX':
+                print('[INFO] Found a WAVE and FLUX array')
+                data_options[0] = 0
+                data_keywords[0] = 'WAVE'
+                data_keywords[1] = ext
+                data_options[1] = 0
+                data_keywords[4] = 'FLUX'
+                data_keywords[5] = ext
+                break
+            else:
+                print('[INFO] No suitable keywords found. Using defaults')
+    # Flux
+    if infits[0].data is not None:
+        print('[INFO] Data in primary header')
+        data_options[1] = 1
+        data_keywords[5] = 0
+    else:
+        print('[INFO] Data information not understood. Return defaults')
+    return data_options, data_keywords
+
+
+
+def get_header_structure(infits):
+    """
+    Function to retrun guessess of all the required keywords based on the
+    input FITS file
+
+    Arguments: 
+    infits : astropy.io.fits.hdu.hdulist.HDUList
+
+        One FITS file that is representative of all of the files in the
+        dataset. 
+
+    Returns:
+    header_kws : list
+        A list of header keywords that will be used to get header information.
+        This list contains six strings with the default keywords.
+
+    header_exts : list
+        A list of header extensions. The default is that these are all zero.
+
+    """
+    # Start with the default options:
+    data_options, data_keywords, \
+        header_kws, header_exts = interface_defaults()
+
+    exts = len(infits)
+    for i, kw in enumerate(header_kws):
+        print(kw)
+        ext = 0
+        # List all header keywords
+        hdr_keys0 = list(infits[0].header.keys())
+        # How many extensions?
+
+        # Search for exact matches to default keywords:
+        matches = [obj for obj in hdr_keys0 if kw in obj]
+        # Keyword hit:
+
+        if len(matches) == 1:
+            print('[INFO] Unique keyword hit. Using this keyword and extension')
+            header_kws[i] = matches[0]
+            header_exts[i] = ext
+        elif len(matches) > 1:
+            print('[INFO] Multiple matches found')
+            i_match = [obj for obj in matches if 'I-' + kw == obj]
+            if len(i_match) == 1:
+                print('[INFO] IACOB keyword found')
+                header_kws[i] = i_match[0]
+                header_exts[i] = ext
+            else:
+                exact_match = [obj for obj in matches if kw == obj]
+                print('[INFO] Exact keyword match found')
+                header_kws[i] = exact_match[0]
+                header_exts[i] = ext
+        else:
+            print('[INFO] No suitable matches')
+
+    return header_kws, header_exts
+
+
 def write_filename(ext, name, date_obs, tel, ins, spec_start, spec_end):
     """
     Function to create the filename for the processed files

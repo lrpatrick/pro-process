@@ -37,11 +37,11 @@ pid_start = int(input('[INFO] Please enter ID number for first spectrum as integ
 # Get path of input catalogue
 # pcat = input('[INFO] Please enter full path of input catalogue:\n')
 
-pcat = '/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/AAOmega/30_lmc_ccd2/30_lmc_ccd2_catalog_pro.dat'
-
+# pcat = '/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/AAOmega/30_lmc_ccd2/30_lmc_ccd2_catalog_pro.dat'
+pcat = '/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/AAOmega/pro_input/AAO-cat.dat'
 # Path for spectra
 # For the interface this will be taken from uploaded archive
-tree = '/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/AAOmega/30_lmc_ccd2/'
+tree = '/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/AAOmega/pro_input/'
 # Required keywords to be referenced
 cat_kw = ['SPECTRUM', 'OBJECT', 'DATE-OBS', 'RA', 'DEC',
           'TEL', 'INS', 'TEXP']
