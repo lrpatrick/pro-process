@@ -32,7 +32,9 @@ def getdata(data_path):
 
 
 # Get ID number
-pid_start = int(input('[INFO] Please enter ID number for first spectrum as integer:\n')) or int(0)
+# pid_start = int(input('[INFO] Please enter ID number for first spectrum as integer:\n')) or int(0)
+readme_path = '/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/ASTRO+database/README'
+pid_start = pfits.get_proid(readme_path)
 
 # Get path of input catalogue
 # pcat = input('[INFO] Please enter full path of input catalogue:\n')
@@ -72,3 +74,7 @@ for i, fascii in enumerate(cat['SPECTRUM']):
 
 
 print('[INFO] Final PID {}'.format(pid_i))
+
+# Update database README file
+final_pid = pid_i
+readme_fin = pfits.write_proid(readme_path, final_pid)

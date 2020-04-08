@@ -107,7 +107,11 @@ flist = glob.glob('/home/lee/Work/ngc330/NGC330_HARPS/*.fits')
 # flist = glob.glob('/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/IACOB/raw/*.fits')
 # Cygnus
 # flist = glob.glob('/home/lee/Work/PROMETEO/cygOB2_spectra/spectra_CYGOB2_Sara/INT/spn_ag16/*.fits')
-pid_start = int(input('[INFO] Please enter ID number for first spectrum as integer:\n')) or int(0)
+
+# Get ID number:
+# pid_start = int(input('[INFO] Please enter ID number for first spectrum as integer:\n')) or int(0)
+readme_path = '/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/ASTRO+database/README'
+pid_start = pfits.get_proid(readme_path)
 
 # User input KEYWORDS for all spectra:
 
@@ -236,3 +240,9 @@ for i, ffits in enumerate(flist):
 
 
 print('[INFO] Final PID {}'.format(pid_i))
+
+# Update database README file
+final_pid = pid_i
+readme_fin = pfits.write_proid(readme_path, final_pid)
+
+

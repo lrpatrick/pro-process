@@ -239,6 +239,45 @@ def get_header_structure(infits):
     return header_kws, header_exts
 
 
+
+def get_proid(readme_path):
+    """
+    Function to get the next ID number to be written to the files
+    
+    Arguments:
+    readme_path : string
+        Full path to the readme file to be read
+
+    Returns:
+    pid_start : int
+        ID number extractedfrom input readme file
+    """
+    readme = ascii.read(readme_path)
+    pid_start = int(readme['col2'][0])
+    return pid_start
+
+
+def write_proid(readme_path, pid_fin):
+    """
+    Funtion to write the ID number to a README file
+    
+    Arguments:
+    readme_path : string
+        Full path to the readme file to be read
+
+    pid_fin : int
+        ID number to be written to readme file readme file
+
+    Returns:
+    readme : astropy.table.table.Table
+        Output table that has been written to file
+    """
+    readme = ascii.read(readme_path)
+    readme['col2'][0] = int(pid_fin)
+    ascii.write(readme, readme_path, overwrite=True)
+    return readme
+
+
 def write_filename(ext, name, date_obs, tel, ins, spec_start, spec_end):
     """
     Function to create the filename for the processed files
