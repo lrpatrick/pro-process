@@ -102,16 +102,16 @@ def guess_fits(infits):
 
 
 # HARPS
-flist = glob.glob('/home/lee/Work/ngc330/NGC330_HARPS/*.fits')
+# flist = glob.glob('/home/lee/Work/ngc330/NGC330_HARPS/*.fits')
 # IACOB
-# flist = glob.glob('/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/IACOB/raw/*.fits')
+flist = glob.glob('/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/IACOB/raw/*.fits')
 # Cygnus
 # flist = glob.glob('/home/lee/Work/PROMETEO/cygOB2_spectra/spectra_CYGOB2_Sara/INT/spn_ag16/*.fits')
 
 # Get ID number:
 # pid_start = int(input('[INFO] Please enter ID number for first spectrum as integer:\n')) or int(0)
-readme_path = '/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/ASTRO+database/README'
-pid_start = pfits.get_proid(readme_path)
+# readme_path = '/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/ASTRO+database/README'
+# pid_start = pfits.get_proid(readme_path)
 
 # User input KEYWORDS for all spectra:
 
@@ -214,7 +214,7 @@ for i, kw in enumerate(header_kws):
 
 for i, ffits in enumerate(flist):
     print('[INFO] Processing file {}'.format(ffits))
-    pid_i = pid_start + i
+    # pid_i = pid_start + i
     print('[INFO] Extracting data from input FITS')
     try:
         infits = fits.open(ffits)
@@ -228,21 +228,21 @@ for i, ffits in enumerate(flist):
         print('[WARNING] Unable to generate appropriate data')
 
     try:
-        new_hdu = pfits.write_fits(pid_i, data, keyword_values, infits)
+        new_hdu = pfits.write_fits(data, keyword_values, infits)
     except:
         print('[WARNING] Unable to write new FITS file')
     try:
-        ascii_data = pfits.write_ascii(pid_i, data, keyword_values)
+        ascii_data = pfits.write_ascii(data, keyword_values)
     except:
         print('[WARNING] Unable to write new ASCII file')
 
     # print('[INFO] Write output ascii file:')
 
 
-print('[INFO] Final PID {}'.format(pid_i))
+# print('[INFO] Final PID {}'.format(pid_i))
 
-# Update database README file
-final_pid = pid_i
-readme_fin = pfits.write_proid(readme_path, final_pid)
+# # Update database README file
+# final_pid = pid_i
+# readme_fin = pfits.write_proid(readme_path, final_pid)
 
 

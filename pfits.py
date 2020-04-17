@@ -317,11 +317,37 @@ def write_filename(ext, name, date_obs, tel, ins, spec_start, spec_end):
     return fname
 
 
-def write_fits_header(newfits, pid, keywords):
+def write_fits_header(newfits, keywords):
     """
     Create a fits header and instert it into the new fits fits
     
-    pid should be an integer
+    Arguments:
+
+    newfits : astropy.io.fits.hdu.hdulist.HDUList
+        A fits file for the keywords to be added
+
+    keywords : list
+        A list of keywords values in following order:
+
+        OBJECT : str
+            Name of object
+        DATE-OBS  : str
+            Date of observation       [YYYY-MM-DDTHH:MM:SS.sss]
+        RA : float
+            Right ascension of target [DEGREE]
+        DEC : float
+            Declination of target     [DEGREE]
+        TELESCOPE : str
+            Telescope used            [free text]
+        INSTRUMET : str
+            Instrument used           [free text]
+        EXPTIME   : float
+            Exposure time             [Seconds]
+
+    Returns:
+
+    newfits : astropy.io.fits.hdu.hdulist.HDUList
+        The input newfits file with the header keywords added
 
     """
     # Generate date-time to put in header
@@ -329,7 +355,7 @@ def write_fits_header(newfits, pid, keywords):
     comment = 'ASTRO+ processed FITS file'
     # Put data into header
     newfits.header['DATE'] = date
-    newfits.header['PROID'] = pid
+    # newfits.header['PROID'] = pid
     newfits.header['OBJECT'] = keywords[0]
     newfits.header['DATE-OBS'] = keywords[1]
     newfits.header['RA'] = keywords[2]
@@ -342,15 +368,12 @@ def write_fits_header(newfits, pid, keywords):
     return newfits
 
 
-def write_fits(pid, data, keywords, oldfits=None):
+def write_fits(data, keywords, oldfits=None):
 
     """
     Function to write the standard PROMETEO FITS files
 
     Arguments:
-
-    pid : int
-        ASTRO+ ID for star
 
     data : numpy.ndarray
         Array containing three columns:
@@ -386,7 +409,7 @@ def write_fits(pid, data, keywords, oldfits=None):
     # Create clean FITS based on the data alone
     new_hdu = fits.PrimaryHDU(data)
     # Add header information to new fits
-    new_hdu = write_fits_header(new_hdu, pid, keywords)
+    new_hdu = write_fits_header(new_hdu, keywords)
     # Get the filename to be written out
     fname = write_filename('.fits', keywords[0], keywords[1],
                                     keywords[4], keywords[5],
@@ -408,7 +431,7 @@ def write_fits(pid, data, keywords, oldfits=None):
     return prohdu
 
 
-def write_ascii(pid, data, keywords):
+def write_ascii(data, keywords):
     """
     Write the standard PROMETEO ascii files
     data : numpy.ndarray
@@ -419,8 +442,6 @@ def write_ascii(pid, data, keywords):
             Normalised spectroscopic data. Same size as x
         yerr : numpy.ndarray
             Uncertainity on y. Same size as x
-    pid : int
-        ASTRO+ ID for star
 
     keywords : list
         A list of keywords values in following order:
@@ -447,23 +468,41 @@ def write_ascii(pid, data, keywords):
                                     keywords[4], keywords[5],
                                     int(round(data[:, 0][0])),
                                     int(round(data[:, 0][-1])))
-    head1 = write_ascii_header(pid, keywords)
+    head1 = write_ascii_header(keywords)
     np.savetxt('data/' + fname, data, header=head1, fmt='%8.8f')
     print('[INFO] ASCII file written to {0}'.format(fname))
     return data
 
 
-def write_ascii_header(pid, keywords):
+def write_ascii_header(keywords):
     """
     Write ASCII standard header format
+    
+    keywords : list
+        A list of keywords values in following order:
+
+        OBJECT : str
+            Name of object
+        DATE-OBS  : str
+            Date of observation       [YYYY-MM-DDTHH:MM:SS.sss]
+        RA : float
+            Right ascension of target [DEGREE]
+        DEC : float
+            Declination of target     [DEGREE]
+        TELESCOPE : str
+            Telescope used            [free text]
+        INSTRUMET : str
+            Instrument used           [free text]
+        EXPTIME   : float
+            Exposure time             [Seconds]
+
 
     """ 
     # Generate data to write
     date = str(datetime.date.today())
-    pid = str(pid)
+    # pid = str(pid)
 
     hascii = 'PROMETEO processed ASCII file\nProcessing date: ' + date \
-        + '\nPROMETEO reference ID: ' + pid \
         + '\nOBJECT: ' + str(keywords[0]) \
         + '\nDATE-OBS: ' + str(keywords[1]) \
         + '\nRA: ' + str(keywords[2]) \

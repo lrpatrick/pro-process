@@ -34,7 +34,7 @@ def getdata(data_path):
 # Get ID number
 # pid_start = int(input('[INFO] Please enter ID number for first spectrum as integer:\n')) or int(0)
 readme_path = '/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/ASTRO+database/README'
-pid_start = pfits.get_proid(readme_path)
+# pid_start = pfits.get_proid(readme_path)
 
 # Get path of input catalogue
 # pcat = input('[INFO] Please enter full path of input catalogue:\n')
@@ -52,7 +52,7 @@ cat = ascii.read(pcat, names=cat_kw)
 
 for i, fascii in enumerate(cat['SPECTRUM']):
     print('[INFO] Processing file {}'.format(fascii))
-    pid_i = pid_start + i
+    # pid_i = pid_start + i
     print('[INFO] Extracting data from input FITS')
     try:
         # Get Data:
@@ -64,17 +64,17 @@ for i, fascii in enumerate(cat['SPECTRUM']):
         print('[WARNING] Unable to generate appropriate data')
 
     try:
-        new_hdu = pfits.write_fits(pid_i, data, keyword_values, oldfits=None)
+        new_hdu = pfits.write_fits(data, keyword_values, oldfits=None)
     except:
         print('[WARNING] Unable to write new FITS file')
     try:
-        ascii_data = pfits.write_ascii(pid_i, data, keyword_values)
+        ascii_data = pfits.write_ascii(data, keyword_values)
     except:
         print('[WARNING] Unable to write new ASCII file')
 
 
-print('[INFO] Final PID {}'.format(pid_i))
+# print('[INFO] Final PID {}'.format(pid_i))
 
 # Update database README file
-final_pid = pid_i
-readme_fin = pfits.write_proid(readme_path, final_pid)
+# final_pid = pid_i
+# readme_fin = pfits.write_proid(readme_path, final_pid)
