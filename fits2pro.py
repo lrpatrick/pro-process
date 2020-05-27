@@ -5,7 +5,17 @@ FITS and ASCII files
 
 This script should be used to generate the input for pfits 
 
-TODO: Adapt this script to use as input the interface
+Changelog
+
+27-05-2020:
+
+This file has been updated to include
+
+1.  Functionality for the y-error to be included in the input spectrum.
+getdata() has been extended to do this lines 61-67
+
+2.  The new header keywords. The list keyword_values has been changed and an if
+statement added on line 242
 
 
 Author: LRP
@@ -34,7 +44,11 @@ def getdata(data_options, data_keywords, fits):
     if y_option == 0:
         y = fits[data_keywords[5]].data.field(data_keywords[4])[0]
     elif y_option == 1:
-        y = fits[data_keywords[5]].data[0] 
+        y = fits[data_keywords[5]].data[0]
+
+    # Check that y is behaving how we expect
+    if len(y.shape) != 1:
+        y = y[0]
 
     # Wavelength
     if x_option == 0:
@@ -47,11 +61,10 @@ def getdata(data_options, data_keywords, fits):
     if yerr_option == 0:
         yerr = np.zeros_like(x)
     elif yerr_option == 1:
-        yerr = np.zeros_like(x)
-        # yerr = fits[yerr_ext].data.field(yerrname)[0]
+        yerr = fits[data_keywords[7]].data.field(data_keywords[6])[0]
     elif yerr_option == 2:
         yerr = np.zeros_like(x)
-        # yerr = fits[data_keywords[5]].data[0] 
+        yerr = fits[data_keywords[7]].data[0] 
 
     # Stack data in useful format:
     data = np.column_stack((x, y, yerr))
@@ -104,9 +117,11 @@ def guess_fits(infits):
 # HARPS
 # flist = glob.glob('/home/lee/Work/ngc330/NGC330_HARPS/*.fits')
 # IACOB
-flist = glob.glob('/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/IACOB/raw/*.fits')
+# flist = glob.glob('/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/IACOB/raw/*.fits')
+flist = glob.glob('/media/lee/18FEB5E54AB6A1A6/data/PROMETEO/IACOB/v2/IACOB2PROMETEO1/*.fits')
 # Cygnus
 # flist = glob.glob('/home/lee/Work/PROMETEO/cygOB2_spectra/spectra_CYGOB2_Sara/INT/spn_ag16/*.fits')
+# flist = glob.glob('/home/lee/Work/PROMETEO/cygOB2_spectra/spectra_CYGOB2_Sara/INT/spn_ag17/*.fits')
 
 # Get ID number:
 # pid_start = int(input('[INFO] Please enter ID number for first spectrum as integer:\n')) or int(0)
@@ -130,7 +145,7 @@ data_options, data_keywords,\
 
 # # IACOB
 # # in_kws = ['OBJECT', 'DATE-OBS', 'I-RA', 'I-DEC',
-# #           'TELESCOP', 'INSTRUME', 'I-TEXP']
+# #           'TELESCOP', 'INSTRUME', 'I-TEXP', 'OBJECT']
 
 # # Cygnus
 # # in_kws = ['OBJECT', 'DATE-OBS', 'RA', 'DEC',
@@ -184,17 +199,17 @@ else:
 print('[INFO] Flux Error:')
 print('[INFO] From guessing function yerr-option is {0}'
     .format(data_options[2]))
-yerr_option = input('[INPUT] Update the above choice? Options:\n 0 : Zeros\n 1 : Array Name\n 2: Extension\n') or None
+yerr_option = input('[INPUT] Update the above choice? Options:\n 0 : Zeros\n 1 : Array Name\n 2: Extension\nHit return to use above option') or None
 if yerr_option == None:
     yerr_option = data_options[2]
 else:
-    if yerr_option == 0:
+    if int(yerr_option) == 0:
         pass
     elif yerr_option == 1:
-        yname = input('Array name:\n')
-        y_ext = int(input('Header extension:\n'))
+        data_keywords[6] = input('Array name:\n')
+        data_keywords[7] = int(input('Header extension:\n'))
     elif yerr_option == 2:
-        y_ext = int(input('Header extension:\n'))
+        data_keywords[7] = int(input('Header extension:\n'))
     else:
         print('[WARNING] INPUT not understood')
 
@@ -209,7 +224,7 @@ for i, kw in enumerate(header_kws):
         header_exts[i] = input('[INPUT] New Extension (int):\n')
 
 
-# a = input('[INFO] This is a chance to stop before entering the unbreakable loop!')
+a = input('[INFO] This is a chance to stop before entering the unbreakable loop!')
 
 
 for i, ffits in enumerate(flist):
@@ -220,10 +235,13 @@ for i, ffits in enumerate(flist):
         infits = fits.open(ffits)
         # Get Data:
         data = getdata(data_options, data_keywords, infits)
-        # Get header information from in_kws
+        # Get required header information from in_kws
         keyword_values = [infits[ext].header[kw]
+                          for ext, kw in zip(header_exts[:9], header_kws[:9])]
+        # Add optional keywords if appropriate
+        if keyword_values[8] == 1:
+            keyword_values = [infits[ext].header[kw]
                           for ext, kw in zip(header_exts, header_kws)]
-
     except:
         print('[WARNING] Unable to generate appropriate data')
 
@@ -237,12 +255,3 @@ for i, ffits in enumerate(flist):
         print('[WARNING] Unable to write new ASCII file')
 
     # print('[INFO] Write output ascii file:')
-
-
-# print('[INFO] Final PID {}'.format(pid_i))
-
-# # Update database README file
-# final_pid = pid_i
-# readme_fin = pfits.write_proid(readme_path, final_pid)
-
-
